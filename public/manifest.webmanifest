@@ -1,7 +1,7 @@
 {
-  "name": "Trackbound",
+  "name": "Trackbound: Pursuit",
   "short_name": "Trackbound",
-  "description": "Dash down the line: a 3D endless runner.",
+  "description": "Chase down the suspect: a story-driven 3D police pursuit.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

@@ -1,4 +1,4 @@
-export type Action = 'left' | 'right' | 'jump' | 'slide' | 'pause';
+export type Action = 'left' | 'right' | 'jump' | 'slide' | 'pause' | 'power';
 
 /** Keyboard + swipe input. Swipes fire as soon as the threshold is crossed, not on release. */
 export class Input {
@@ -18,6 +18,7 @@ export class Input {
       const map: Record<string, Action> = {
         ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
         ArrowUp: 'jump', KeyW: 'jump', Space: 'jump', ArrowDown: 'slide', KeyS: 'slide', Escape: 'pause', KeyP: 'pause',
+        KeyE: 'power', KeyF: 'power', Enter: 'power', ShiftLeft: 'power', ShiftRight: 'power',
       };
       const a = map[e.code];
       if (a) { e.preventDefault(); this.emit(a); }

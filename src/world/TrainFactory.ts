@@ -26,18 +26,18 @@ export class TrainFactory {
 
     const b = new StaticBatch();
     const box = (m: THREE.Material, w: number, h: number, d: number, x: number, y: number, z: number) => b.addGeometry(new THREE.BoxGeometry(w, h, d), m, x, y, z);
-    const W = 0.95, Y0 = 0.6, Y1 = 3.0, R = 0.38, Z0 = -0.15, LEN = CAR_LEN - 0.3;
+    const W = 0.89, BEVEL = 0.06, Y0 = 0.6, Y1 = 3.0, R = 0.38, Z0 = -0.15, LEN = CAR_LEN - 0.3;
 
     // shell: rounded cross-section extruded along the car
     const sh = new THREE.Shape();
     sh.moveTo(-W + 0.08, Y0); sh.lineTo(W - 0.08, Y0); sh.quadraticCurveTo(W, Y0, W, Y0 + 0.08);
     sh.lineTo(W, Y1 - R); sh.quadraticCurveTo(W, Y1, W - R, Y1); sh.lineTo(-W + R, Y1); sh.quadraticCurveTo(-W, Y1, -W, Y1 - R);
     sh.lineTo(-W, Y0 + 0.08); sh.quadraticCurveTo(-W, Y0, -W + 0.08, Y0);
-    const shell = new THREE.ExtrudeGeometry(sh, { depth: LEN - 0.12, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.06, bevelSegments: 3, curveSegments: 6 });
+    const shell = new THREE.ExtrudeGeometry(sh, { depth: LEN - 0.12, bevelEnabled: true, bevelSize: BEVEL, bevelThickness: 0.06, bevelSegments: 3, curveSegments: 6 });
     b.addGeometry(shell, body, 0, 0, Z0 - LEN + 0.06);
 
     for (const s of [-1, 1]) {
-      const x = s * (W + 0.006);
+      const x = s * (W + BEVEL + 0.006);
       box(accent, 0.02, 0.16, LEN - 0.3, x, 1.22, Z0 - LEN / 2); // waist stripe
       box(dark, 0.02, 0.24, LEN - 0.2, x, 0.74, Z0 - LEN / 2); // skirt
       const layout: ['w' | 'd', number][] = [['w', 0.75], ['d', 1.85], ['w', 2.95], ['w', 3.95], ['d', 5.05], ['w', 6.15]];
@@ -56,7 +56,7 @@ export class TrainFactory {
     }
     // cab ends
     for (const [z, dir] of [[Z0, 1], [Z0 - LEN, -1]] as [number, number][]) {
-      const zf = z + dir * 0.055;
+      const zf = z + dir * 0.075;
       box(dark, 1.56, 1.02, 0.04, 0, 2.06, zf);
       box(glass, 1.42, 0.88, 0.05, 0, 2.06, zf + dir * 0.01);
       box(amber, 0.9, 0.15, 0.05, 0, 2.72, zf);

@@ -1,47 +1,71 @@
-# Redesign notes
+# Pursuit redesign notes
 
-## 1. Audit of the previous build
-| Area | Finding |
-|---|---|
-| Character | One CC0 robot; no roll or strafe clips, so the slide was a tilted sitting pose |
-| Environment | Boxes with generated window textures; one repeating skyline; dusk lighting hid detail |
-| Trains | Textured boxes |
-| Obstacles | Simple box barriers |
-| Rendering | No environment lighting or reflections; single shadow setting |
-| UI | System font, two volume sliders, no navigation |
-| Systems missing | Power-ups, missions, shop, character selection, levels, settings, PWA |
-| Kept as-is | Lane/jump/slide physics, validated track generator, pooling, collision, IndexedDB save |
+## 1. Audit of the endless-runner build (what was wrong, and why)
+| Area | Finding | Cause |
+|---|---|---|
+| Jump and slide did not read | From the chase camera only a hood and a cape were visible | Every character wore a cape that covered arms and legs |
+| Slide looked like a tilt | No slide clip existed; a dodge-roll was played in slow motion | Asset pipeline kept 12 of the pack's 75 clips |
+| Train sides were blank slabs | Windows, doors and stripes were never visible | The shell's bevel pushed its skin 6 cm outside those parts, burying them |
+| Jump felt weightless | No anticipation or landing weight | Launch was instant; landing had no squash, shake or heavy-landing sound |
+| Gameplay | Endless, one world, one hit ended the run | By design of the previous build |
+| Kept as-is | Lane/jump/slide physics, validated track generator, pooling, IndexedDB save, quality tiers, PWA | Solid and reused |
 
-## 2. Visual direction
-Bright, saturated, toy-like city on a sunny day. Chunky navy outlines and candy buttons in the UI.
-Palette: navy `#0f1440`, royal `#2337c6`, sky `#49c6ff`, gold `#ffc928`, amber `#ff9d1a`,
-coral `#ff5a5f`, mint `#2fe0a6`. Display type: Lilita One; body: Nunito 700/800.
+## 2. What was built
+**Characters and animation**
+- Capes hidden; five bodies, one shared 35-clip animation set; looks are data (recolour rules + accessories).
+- Jump: 55 ms crouch (squash) before the feet leave the ground, stretch on launch, airborne pose, landing
+  squash with dust, camera kick and a heavier sound for hard landings.
+- Slide: seated feet-first pose, body leaned back, camera drops; cross-fades back to the run.
+- Also: lane strafes, stumble on collision, ability activation, motorcycle riding (with wheelie), flight
+  (body horizontal, cape out), taser/net aim-and-fire, tackle, arrest, cheer, death.
+- Per-character movement: run clip, cadence, torso lean and arm sweep come from `MoveStyle`.
 
-## 3. What changed
-- **Characters:** five rigged human characters with face, hair/hood and clothing; animation state
-  machine with cross-fades: idle, run, strafe on lane change, take-off, airborne, landing, roll,
-  death, cheer.
-- **World:** city of modelled buildings (two depth rows), street lamps, benches, trees, bins,
-  parked cars, billboards with original artwork, station name boards, catenary portals; profiled
-  rails, sleepers with clips, ballast; gradient sky with sun glow and drifting clouds.
-- **Trains:** original metro car from real geometry — rounded shell, inset glass, doors, cab
-  windscreen, destination display, lights, roof units, pantograph, bogies and wheels; five liveries.
-- **Rendering:** image-based ambient light and reflections, ACES tone mapping, soft shadows,
-  distance fog; Low / Medium / High / Auto quality (resolution, shadows, clouds, particles).
-- **Gameplay added:** Coin Magnet, Shield, Double Coins (pickups, timers, upgrades); 14 missions
-  dealt three at a time with rewards; XP levels; five unlockable runners; shop upgrades.
-- **Feel:** particles for coins, landings, rolls, pickups and crashes; shield bubble; knock-back on
-  crash; results camera; score count-up.
-- **UI:** splash, main menu with level, coins and navigation, bottom sheets for Runners, Missions,
-  Upgrades and Settings, HUD with power-up timers and mission toasts, pause, results, reset dialog.
-- **PWA:** manifest, icons, generated service worker that precaches the build.
+**Pursuit**
+- Suspect AI on the same track: follows the open lane, jumps, slides, swerves round traffic, glances
+  back, trips (you gain ground), throws debris into your lane, rides a getaway motorcycle in some zones,
+  weaves when cornered. A marker keeps them visible in traffic.
+- Gap is simulation, not decoration: see `src/pursuit/Pursuit.ts` and its tests.
+- Six cases plus Free Patrol; the boss case unlocks at 100,000 m of lifetime distance.
+- Checkpoints at every zone; hearts instead of one-hit death.
+- Playable finale (taser, net launcher or tackle depending on the case) and an arrest cinematic.
+- Intro cinematic per case: robbery, suspect bolts, dispatch call, go.
 
-## 4. Known gaps against the brief
-- One world. The other five worlds are not built.
-- No jetpack, super sneakers or speed boost; no outfits/cosmetics beyond the five runners; no
-  achievements list, daily/weekly rotation or language options.
-- The characters are a fantasy-adventurer pack recast as city runners, not bespoke designs.
-- Track, trains and obstacles are generated in code rather than sculpted in a modelling tool;
-  no normal maps.
-- Audio is synthesised, not recorded.
-- Not yet run on a physical phone: frame rate on mid-range Android and touch feel are unverified.
+**World**
+- Eight environments with their own scenery, lighting, fog, sky, soundscape and obstacle sets:
+  city streets (with intersections), railway, tunnel, back alley, industrial yard, expressway and
+  suspension bridge, night roadworks, night docks.
+- Traffic: parked vehicles, same-direction traffic you catch up with, oncoming vehicles, pedestrians.
+- Curved-world rendering: the road bends, climbs and dips on screen while the simulation stays on a
+  straight track (see `src/core/Bend.ts`).
+
+**Powers**
+- Six abilities, one per hero: police motorcycle, flight, speed dash, shield, tactical scan, wrecking charge.
+  Coin-charged, with duration, cooldown and HUD ring. Pickups (magnet, shield, double coins) remain.
+
+**Structure**
+- Content is data (`src/data`); seasons, heroes, cases and abilities are added without engine changes.
+- Save migrates endless-runner saves (coins, XP and upgrades carry over).
+
+## 3. Verified
+- `npm test`: 22 unit tests.
+- `npm run test:e2e`: 61 checks in a real browser against the production build, desktop and phone-sized touch.
+- Autopilot soak of the full 50,000 m first case: completes in about 27.5 minutes of game time.
+- Desktop frame rate at High quality: 144 fps (display-capped), 220–330 draw calls.
+
+## 4. Known gaps against the brief (read this before promising anything to players)
+- **Art style is stylised low-poly, not realistic.** The characters are a free CC0 pack repainted and
+  accessorised in code. Bespoke, professionally modelled heroes with unique animation sets need an artist
+  or a purchased pack; the character system is ready to take them.
+- **Per-character animation is partly procedural.** There are two run clips; heroes differ by cadence, lean
+  and arm sweep layered on top, not by fully unique mocap.
+- **Roads curve visually only.** There are no true 90-degree turns, branching side streets or route choices;
+  the simulation is a straight three-lane track. Intersections, tunnels and bridges are scenery.
+- **Audio is synthesised.** No recorded footsteps, engines, sirens or music.
+- **No bus model** (none in the free packs); trucks, vans, cars, trains and a motorcycle are used.
+- **Seasons 2 and 3 are placeholders** shown as "coming soon"; only Season 1 has content. Season dates are
+  fixed in `src/data/seasons.ts`; there is no server, so new content ships with a new build.
+- **No costumes, equipment shop or character upgrades** beyond the four shop upgrades and hero unlocks.
+- **Not yet run on a physical phone.** Frame rate on mid-range Android and touch feel are unverified.
+- **Balance is a first pass.** Case lengths follow the brief (case 1 is 50,000 m, about 28 minutes
+  end to end with checkpoints roughly every 2–6 minutes); gap, heart and economy numbers have only been
+  tuned against the autopilot.

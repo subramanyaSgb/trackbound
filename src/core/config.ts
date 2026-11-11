@@ -18,3 +18,6 @@ export const CFG = {
 };
 
 export const speedAt = (d: number) => Math.min(CFG.maxSpeed, CFG.startSpeed + d * CFG.speedPerMeter);
+
+/** Pace builds from a standing start toward the zone's top speed over the first few hundred metres of a run. */
+export const paceAt = (ran: number, zoneMax: number) => Math.min(zoneMax, Math.max(CFG.startSpeed, zoneMax * 0.62) + ran * 0.02);

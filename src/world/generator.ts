@@ -21,14 +21,7 @@ export interface Row {
 export const TRAIN_LEN = 14;
 export const isSolid = (c: Cell) => c === 'block' || c === 'train';
 
-const STAGE_START = [0, 300, 800, 1600, 3000];
-export const stageFor = (d: number) => {
-  let s = 0;
-  for (let i = 0; i < STAGE_START.length; i++) if (d >= STAGE_START[i]) s = i;
-  return s;
-};
-
-interface StageCfg {
+export interface StageCfg {
   react: number; // seconds between rows
   other: [number, number, number, number]; // weights empty/jump/slide/block for non-safe lanes
   safeEmpty: number; // chance the guaranteed lane needs no action
@@ -44,6 +37,29 @@ export const STAGES: StageCfg[] = [
   { react: 0.72, other: [0.15, 0.2, 0.2, 0.45], safeEmpty: 0.25, change: 0.65, train: 0.2, chain: true },
 ];
 export const MIN_SPACING = 9;
+export const MAX_STAGE = STAGES.length - 1;
+
+/** Per-environment tuning applied on top of the stage. */
+export interface GenMods {
+  /** Multiplier on the chance of an oncoming mover (0 disables them). */
+  train: number;
+  /** Multiplier on solid blocks in the non-safe lanes (narrow places use > 1). */
+  block: number;
+  /** Finale: no obstacles at all, only coins. */
+  clear?: boolean;
+}
+export const DEFAULT_MODS: GenMods = { train: 1, block: 1 };
+
+/** Blend two neighbouring stages so difficulty rises smoothly inside a zone. */
+export function stageCfg(stage: number): StageCfg {
+  const s = Math.min(MAX_STAGE, Math.max(0, stage));
+  const a = STAGES[Math.floor(s)], b = STAGES[Math.min(MAX_STAGE, Math.floor(s) + 1)], f = s - Math.floor(s);
+  const mix = (x: number, y: number) => x + (y - x) * f;
+  return {
+    react: mix(a.react, b.react), other: a.other.map((v, i) => mix(v, b.other[i])) as StageCfg['other'],
+    safeEmpty: mix(a.safeEmpty, b.safeEmpty), change: mix(a.change, b.change), train: mix(a.train, b.train), chain: s >= 2,
+  };
+}
 
 export function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -89,9 +105,9 @@ export class TrackGenerator {
     return this.reach;
   }
 
-  next(speed: number): Row {
-    const stage = stageFor(this.d);
-    const cfg = STAGES[stage];
+  next(speed: number, stage = 0, mods: GenMods = DEFAULT_MODS): Row {
+    const base = stageCfg(stage);
+    const cfg: StageCfg = { ...base, train: base.train * mods.train, other: [base.other[0], base.other[1], base.other[2], base.other[3] * mods.block] };
     const spacing = this.index === 0 ? 0 : Math.max(MIN_SPACING, speed * cfg.react);
     const d = this.d + spacing;
     if (this.trainLane >= 0 && d > this.trainEndD) {
@@ -101,7 +117,7 @@ export class TrackGenerator {
 
     let row: Row | null = null;
     for (let attempt = 0; attempt < 8 && !row; attempt++) {
-      const cand = this.build(d, spacing, stage, cfg);
+      const cand = mods.clear ? this.clearRow(d, spacing, stage) : this.build(d, spacing, stage, cfg);
       const r = nextReach(this.prev ? this.prev.cells : null, this.reach, cand.cells);
       if (r[cand.safe]) row = cand;
     }
@@ -122,6 +138,13 @@ export class TrackGenerator {
     this.d = d;
     this.index++;
     return row;
+  }
+
+  /** Empty row for the finale; an active oncoming mover still owns its lane. */
+  private clearRow(d: number, spacing: number, stage: number): Row {
+    const cells: Cell[] = [0, 1, 2].map((l) => (l === this.trainLane ? 'train' : 'empty'));
+    const safe = this.safe === this.trainLane ? (this.safe + 1) % 3 : this.safe;
+    return { index: this.index, d, spacing, cells, safe, coins: this.rng() < 0.5, power: false, stage };
   }
 
   private pick(w: [number, number, number, number]): Cell {

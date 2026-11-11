@@ -1,0 +1,62 @@
+<!doctype html>
+<!-- Dev-only model viewer (served by `vite`, not part of the build).
+     /tools/viewer.html?mode=chars&clip=Running_A&t=0.3&yaw=0.5   or   ?file=vehicles&cols=6 -->
+<html><body style="margin:0;background:#8fb6d8;overflow:hidden"><canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+const q = new URLSearchParams(location.search);
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 1));
+const sun = new THREE.DirectionalLight(0xffffff, 2.5); sun.position.set(3, 8, 6); scene.add(sun);
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.1, 500);
+const loader = new GLTFLoader();
+const yaw = +(q.get('yaw') ?? 0.5);
+let span = 1;
+if (q.get('mode') === 'chars') {
+  const ids = (q.get('ids') ?? 'knight,rogue,hooded,mage,barbarian').split(',');
+  const base = await loader.loadAsync('/models/char-knight.glb');
+  const clip = base.animations.find((a) => a.name === (q.get('clip') ?? 'Idle'));
+  const hide = new RegExp(q.get('hide') ?? 'Cape');
+  for (let i = 0; i < ids.length; i++) {
+    const g = await loader.loadAsync(`/models/char-${ids[i]}.glb`);
+    g.scene.position.x = (i - (ids.length - 1) / 2) * 1.6;
+    g.scene.rotation.y = yaw;
+    g.scene.traverse((o) => { if (hide.test(o.name)) o.visible = false; });
+    const mixer = new THREE.AnimationMixer(g.scene);
+    mixer.clipAction(clip).play();
+    mixer.setTime(+(q.get('t') ?? 0.3));
+    scene.add(g.scene);
+  }
+  span = ids.length * 1.6;
+  cam.position.set(0, 1.4, span * 1.05); cam.lookAt(0, 0.9, 0);
+} else {
+  const g = await loader.loadAsync(`/models/${q.get('file')}.glb`);
+  const cols = +(q.get('cols') ?? 6);
+  const kids = [...g.scene.children];
+  const names = [];
+  let maxS = 0;
+  kids.forEach((k) => { const b = new THREE.Box3().setFromObject(k); const s = b.getSize(new THREE.Vector3()); maxS = Math.max(maxS, s.x, s.z); });
+  kids.forEach((k, i) => {
+    const b = new THREE.Box3().setFromObject(k); const s = b.getSize(new THREE.Vector3());
+    const holder = new THREE.Group();
+    holder.add(k);
+    const f = +(q.get('norm') ?? 1) ? 1.6 / Math.max(s.x, s.y, s.z) : 1.6 / maxS;
+    holder.scale.setScalar(f);
+    holder.rotation.y = yaw;
+    holder.position.set((i % cols - (cols - 1) / 2) * 2.4, 0, Math.floor(i / cols) * 2.6);
+    scene.add(holder);
+    names.push(`${i}:${k.name} ${s.x.toFixed(2)}x${s.y.toFixed(2)}x${s.z.toFixed(2)}`);
+  });
+  window.__names = names;
+  const rows = Math.ceil(kids.length / cols);
+  cam.position.set(0, 9 + rows * 2.2, rows * 2.6 + 9); cam.lookAt(0, 0, rows * 1.3 - 1);
+}
+renderer.render(scene, cam);
+window.__ready = true;
+</script></body></html>

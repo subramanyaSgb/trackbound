@@ -1,20 +1,36 @@
+import type { MissionProgress } from '../data/missions';
 import type { MissionState } from '../systems/Missions';
 import type { PowerKind } from '../systems/PowerUps';
 
 export type Quality = 'auto' | 'low' | 'medium' | 'high';
+export type UpgradeKind = PowerKind | 'charge';
 export interface SaveData {
+  version: number;
   best: number; bestDistance: number; coins: number; xp: number; runs: number;
   music: number; sfx: number; quality: Quality; sensitivity: number; haptics: boolean;
   char: string; owned: string[];
-  upgrades: Record<PowerKind, number>;
+  upgrades: Record<UpgradeKind, number>;
+  /** Bounties (rotating side goals). */
   missions: MissionState[]; missionCursor: number; missionsDone: number;
+  /** Story: selected mission, per-mission checkpoint/completion, lifetime distance. */
+  mission: string;
+  story: Record<string, MissionProgress>;
+  totalDistance: number;
+  arrests: number;
+  /** Season XP and how many season rewards have been collected, per season id. */
+  seasonXp: Record<string, number>;
+  seasonClaimed: Record<string, number>;
+  introSeen: boolean;
 }
 const defaults = (): SaveData => ({
+  version: 2,
   best: 0, bestDistance: 0, coins: 0, xp: 0, runs: 0,
   music: 0.5, sfx: 0.8, quality: 'auto', sensitivity: 1, haptics: true,
-  char: 'ash', owned: ['ash'],
-  upgrades: { magnet: 0, shield: 0, double: 0 },
+  char: 'officer', owned: ['officer'],
+  upgrades: { magnet: 0, shield: 0, double: 0, charge: 0 },
   missions: [], missionCursor: 0, missionsDone: 0,
+  mission: 'm1', story: {}, totalDistance: 0, arrests: 0,
+  seasonXp: {}, seasonClaimed: {}, introSeen: false,
 });
 
 /** XP curve: level n -> n+1 costs 800 * n. */
@@ -26,7 +42,7 @@ export function levelFor(xp: number) {
 
 /**
  * IndexedDB-backed save (single record). New fields are merged over stored
- * data, so saves from earlier builds keep their coins and records.
+ * data, so saves from earlier builds keep their coins, upgrades and records.
  */
 export class Save {
   data: SaveData = defaults();
@@ -45,10 +61,22 @@ export class Save {
         r.onsuccess = () => res(r.result);
         r.onerror = () => rej(r.error);
       });
-      const d = defaults();
-      this.data = { ...d, ...stored, upgrades: { ...d.upgrades, ...stored?.upgrades } };
-      if (!this.data.owned.includes('ash')) this.data.owned.push('ash');
+      this.data = Save.migrate(stored);
     } catch { this.db = null; }
+  }
+
+  /** Bring any older save up to the current shape. */
+  static migrate(stored: Partial<SaveData> | undefined): SaveData {
+    const d = defaults();
+    const data: SaveData = { ...d, ...stored, upgrades: { ...d.upgrades, ...stored?.upgrades }, story: { ...stored?.story }, seasonXp: { ...stored?.seasonXp }, seasonClaimed: { ...stored?.seasonClaimed } };
+    if ((stored?.version ?? 1) < 2) {
+      // v1 was the endless runner: its five runners no longer exist; coins, XP and upgrades carry over
+      data.owned = ['officer'];
+      data.char = 'officer';
+      data.version = 2;
+    }
+    if (!data.owned.includes('officer')) data.owned.push('officer');
+    return data;
   }
 
   commit() {
