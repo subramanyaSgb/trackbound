@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b2a8a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Trackbound</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ffc928" stroke="#b97800" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#fff3b0" stroke-width="2"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="5" y="4" width="5" height="16" rx="2" fill="currentColor"/><rect x="14" y="4" width="5" height="16" rx="2" fill="currentColor"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1.5 1.5 0 0 0 2.3 1.3l12-7.5a1.5 1.5 0 0 0 0-2.6l-12-7.5A1.5 1.5 0 0 0 7 4.5z" fill="currentColor"/></symbol>
+      <symbol id="i-runner" viewBox="0 0 24 24"><circle cx="14.5" cy="4" r="2.6" fill="currentColor"/><path d="M6 11l4-3 4 1 2 4 3 1M11 9l-2 6 4 2 1 5M9 15l-4 4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></symbol>
+      <symbol id="i-shop" viewBox="0 0 24 24"><path d="M4 9h16l-1.5 11h-13L4 9zM8.5 9V7a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8.5a1 1 0 0 1-1 1h-4.5V15h-5v5.5H5a1 1 0 0 1-1-1V11z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></symbol>
+      <symbol id="i-retry" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.4-5.5M19.5 3.5v4.2h-4.2" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 5h11l-2.5 4 2.5 4H6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8z" fill="currentColor"/></symbol>
+      <symbol id="i-magnet" viewBox="0 0 24 24"><path d="M6 4v8a6 6 0 0 0 12 0V4" fill="none" stroke="currentColor" stroke-width="4.4"/><path d="M3.8 6.5h4.4M15.8 6.5h4.4" stroke="#fff" stroke-width="2"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10v-6l8-3z" fill="currentColor"/></symbol>
+      <symbol id="i-double" viewBox="0 0 24 24"><text x="12" y="18" text-anchor="middle" font-family="Lilita One, sans-serif" font-size="17" fill="currentColor">×2</text></symbol>
+    </defs>
+  </svg>
+
+  <canvas id="game"></canvas>
+
+  <div id="splash" class="screen show">
+    <div class="rays"></div>
+    <div class="logo"><span>TRACK</span><span class="b">BOUND</span></div>
+    <div class="load"><div class="bar"><i id="loadbar"></i></div><p>Laying the tracks…</p></div>
+  </div>
+
+  <div id="menu" class="screen">
+    <header class="topbar">
+      <div class="profile"><div class="lvl"><svg><use href="#i-star"/></svg><b id="m-level">1</b></div><div class="xp"><i id="m-xp"></i><span>LEVEL <em id="m-level2">1</em></span></div></div>
+      <div class="chip"><svg><use href="#i-coin"/></svg><b id="m-coins">0</b></div>
+    </header>
+    <div class="logo sm"><span>TRACK</span><span class="b">BOUND</span></div>
+    <footer>
+      <div class="chip best">BEST <b id="m-best">0</b></div>
+      <button id="btn-play" class="btn gold big"><svg><use href="#i-play"/></svg>PLAY</button>
+      <nav>
+        <button data-sheet="runners"><svg><use href="#i-runner"/></svg><span>Runners</span></button>
+        <button data-sheet="missions"><svg><use href="#i-target"/></svg><span>Missions</span><i id="badge" class="badge"></i></button>
+        <button data-sheet="shop"><svg><use href="#i-shop"/></svg><span>Shop</span></button>
+        <button data-sheet="settings"><svg><use href="#i-gear"/></svg><span>Settings</span></button>
+      </nav>
+      <p class="hint" id="hint"></p>
+    </footer>
+  </div>
+
+  <section id="sheet" class="sheet">
+    <header><h2 id="sheet-title"></h2><div class="chip"><svg><use href="#i-coin"/></svg><b id="s-coins">0</b></div><button id="sheet-close" class="round" aria-label="Close"><svg><use href="#i-close"/></svg></button></header>
+    <div id="sheet-body"></div>
+  </section>
+
+  <div id="hud" class="hud">
+    <button id="btn-pause" class="round" aria-label="Pause"><svg><use href="#i-pause"/></svg></button>
+    <div class="score"><b id="h-score">0</b></div>
+    <div class="right">
+      <div class="chip" id="h-coinchip"><svg><use href="#i-coin"/></svg><b id="h-coins">0</b></div>
+      <div class="chip sm"><svg><use href="#i-flag"/></svg><b id="h-dist">0</b><em>m</em></div>
+    </div>
+    <div id="powers" class="powers"></div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <div id="pause" class="screen dim">
+    <div class="panel">
+      <h2>PAUSED</h2>
+      <button id="btn-resume" class="btn gold"><svg><use href="#i-play"/></svg>RESUME</button>
+      <button id="btn-quit" class="btn"><svg><use href="#i-home"/></svg>HOME</button>
+    </div>
+  </div>
+
+  <section id="over" class="sheet results">
+    <div id="o-record" class="ribbon">NEW RECORD</div>
+    <h2 id="o-title">RUN OVER</h2>
+    <div class="big" id="o-score">0</div>
+    <div class="stats">
+      <div><svg><use href="#i-flag"/></svg><b id="o-dist">0 m</b><span>Distance</span></div>
+      <div><svg><use href="#i-coin"/></svg><b id="o-coins">0</b><span>Coins</span></div>
+      <div><svg><use href="#i-star"/></svg><b id="o-best">0</b><span>Best</span></div>
+    </div>
+    <div class="xprow"><b id="o-level">LEVEL 1</b><div class="xp"><i id="o-xp"></i></div></div>
+    <div id="o-missions" class="mini"></div>
+    <div class="row">
+      <button id="btn-home" class="btn"><svg><use href="#i-home"/></svg>HOME</button>
+      <button id="btn-retry" class="btn gold"><svg><use href="#i-retry"/></svg>RUN AGAIN</button>
+    </div>
+  </section>
+
+  <div id="confirm" class="screen dim">
+    <div class="panel">
+      <h2>RESET PROGRESS?</h2>
+      <p>Coins, runners, upgrades, missions and records will be erased. This cannot be undone.</p>
+      <button id="btn-reset-yes" class="btn red">ERASE EVERYTHING</button>
+      <button id="btn-reset-no" class="btn">KEEP PLAYING</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
