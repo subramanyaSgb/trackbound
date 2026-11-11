@@ -46,8 +46,13 @@ Tap anywhere to skip the intro. In the menu, drag to turn your hero.
 - **Failing:** three collisions in one zone, letting the gap reach the limit, or running out of road or
   capture attempts.
 - **Ability:** coins fill the charge ring; when full, activate it. Charging never spends your coins.
-- **Capture:** at the end of the route, close to range, line up in the suspect's lane and fire inside the
-  green window of the timing meter. Enough hits starts the arrest; running out of attempts fails the case.
+- **Early capture:** a few zones in, the suspect starts to tire. A stamina bar appears under the gap; it
+  drains while you stay right on their heels at full pace and refills a little each time you crash. When
+  it is empty the final capture starts there and then, so a clean run of case 1 ends near 10,000 m
+  (about 7 minutes) instead of at 50,000 m. Tuned per case by `pursuit.early` in `src/data/missions.ts`.
+- **Capture:** when the suspect is exhausted (or at the end of the route), close to range, line up in
+  their lane and fire inside the green window of the timing meter. Enough hits starts the arrest;
+  running out of attempts fails the case.
 - **Free Patrol:** the original endless score-attack run, kept as a mode in the case list.
 
 ## Adding content (no engine changes)

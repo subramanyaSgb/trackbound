@@ -90,6 +90,8 @@ export class Game {
   private throwT = 4;
   private beamT = 0;
   private readyPinged = false;
+  private tiringTold = false;
+  private captureLimit = 0;
   private pace = CFG.startSpeed;
   private slowFrames = 0;
   private autoTier: Exclude<Quality, 'auto'> = 'high';
@@ -138,6 +140,7 @@ export class Game {
       install: () => { void this.installEvt?.prompt(); this.installEvt = null; this.refreshMenu(); },
       power: () => this.onAction('power'),
       skip: () => this.skipIntro(),
+      restart: () => this.restartCase(),
     });
     this.input = new Input(canvas, (a) => this.onAction(a));
     this.input.onDrag = (dx) => { if (this.state === 'menu') this.player.orbit += dx * 0.012; };
@@ -381,13 +384,13 @@ export class Game {
   }
 
   // ---------------------------------------------------------------- run lifecycle
-  private route = (d: number) => ({ theme: themeAt(this.mission, d), stage: stageAt(this.mission, d), clear: !this.mission.patrol && d > this.mission.length - 40 });
+  private route = (d: number) => ({ theme: themeAt(this.mission, d), stage: stageAt(this.mission, d), clear: !this.mission.patrol && (!!this.capture || d > this.mission.length - 40) });
 
   /** Where the selected mission resumes: its saved checkpoint, or the start. */
   private checkpoint() {
     const p = this.save.data.story[this.mission.id];
     const zone = this.mission.patrol || !p || p.done ? 0 : Math.min(p.zone, this.mission.zones.length - 1);
-    return { zone, gap: zone > 0 && p ? p.gap : this.mission.pursuit.startGap };
+    return { zone, gap: zone > 0 && p ? p.gap : this.mission.pursuit.startGap, stamina: zone > 0 && p ? p.stamina ?? 1 : 1 };
   }
 
   private resetWorld(d: number, seed?: number) {
@@ -450,6 +453,9 @@ export class Game {
     this.player.setCharacter(characterById(s.char));
     this.resetWorld(this.startD, seed);
     this.pursuit = new Pursuit(m, cp.gap, m.zones[cp.zone].minGap);
+    this.pursuit.stamina = cp.stamina;
+    this.tiringTold = this.startD >= (m.pursuit.early?.from ?? Infinity);
+    this.captureLimit = m.limit;
     this.abilities = new Abilities(characterById(s.char).ability, s.upgrades.charge);
     this.missions.startRun();
     this.input.dragMode = false;
@@ -469,6 +475,17 @@ export class Game {
       this.beginRun();
       this.ui.banner(m.patrol ? 'FREE PATROL' : cp.zone > 0 ? 'CHECKPOINT' : m.title.toUpperCase(), m.zones[cp.zone].name, 2200);
     }
+  }
+
+  /** Drop the selected case's checkpoint and start it again from the robbery. */
+  restartCase() {
+    if (this.state === 'running' || this.state === 'paused' || this.state === 'intro') this.bank();
+    const s = this.save.data, id = s.mission;
+    const p = s.story[id];
+    if (p && !p.done) delete s.story[id];
+    this.save.commit();
+    this.state = 'menu'; // leave the paused/over state so the new run starts cleanly
+    this.startPursuit();
   }
 
   private beginRun() {
@@ -789,7 +806,7 @@ export class Game {
     this.pursuit.checkpoint(z.minGap);
     if (!m.patrol) {
       if (z.gapBoost) { this.pursuit.surge(z.gapBoost); this.audio.surge(); }
-      this.save.data.story[m.id] = { zone: i, gap: Math.min(this.pursuit.gap, m.pursuit.startGap + 15), done: false, best: Math.max(this.save.data.story[m.id]?.best ?? 0, this.distance) };
+      this.save.data.story[m.id] = { zone: i, gap: Math.min(this.pursuit.gap, m.pursuit.startGap + 15), done: false, best: Math.max(this.save.data.story[m.id]?.best ?? 0, this.distance), stamina: this.pursuit.stamina };
       this.setCrimVehicle();
     }
     this.bank();
@@ -844,7 +861,7 @@ export class Game {
   }
 
   // ---------------------------------------------------------------- the capture
-  private startCapture() {
+  private startCapture(early = false) {
     const m = this.mission;
     this.capture = new Capture(m, {
       phase: (ph) => {
@@ -856,9 +873,12 @@ export class Game {
       shot: (r) => this.onShot(r),
     });
     this.pursuit.floor = Math.max(4, m.capture.range - 5);
+    // the suspect has this much road left before they get away
+    this.captureLimit = Math.min(m.limit, this.player.d + (m.limit - m.length));
+    if (this.criminal.riding) this.criminal.ride(null);
     this.audio.setMood('finale');
     this.audio.checkpoint();
-    this.ui.banner('FINAL PURSUIT', `Get within ${m.capture.range} m of ${CRIMINALS[m.criminal].alias}`, 2600);
+    this.ui.banner(early ? 'SUSPECT EXHAUSTED' : 'FINAL PURSUIT', `Get within ${m.capture.range} m of ${CRIMINALS[m.criminal].alias}`, 2600);
     if (this.abilities.active) { this.abilities.cancel(); this.endAbility(); }
     this.throwT = 2.5;
   }
@@ -939,7 +959,7 @@ export class Game {
     const reward = first ? m.rewards.coins : Math.round(m.rewards.coins * 0.25);
     s.coins += reward;
     this.grantXp(m.rewards.xp + this.score);
-    s.story[m.id] = { zone: 0, gap: m.pursuit.startGap, done: true, best: m.length };
+    s.story[m.id] = { zone: 0, gap: m.pursuit.startGap, done: true, best: this.distance };
     s.arrests++;
     s.runs++;
     // the next case on the board
@@ -957,7 +977,7 @@ export class Game {
     this.ui.caption(null);
     this.ui.results({
       won: true, title: 'SUSPECT IN CUSTODY', detail: `${CRIMINALS[m.criminal].name} has been arrested.`,
-      mission: m.title, distance: m.length, length: m.length, coins: this.runCoins, avoided: this.avoided, abilityUses: this.abilities.uses, hits: this.pursuit.hits,
+      mission: m.title, distance: this.distance, length: m.length, coins: this.runCoins, avoided: this.avoided, abilityUses: this.abilities.uses, hits: this.pursuit.hits,
       pursuit: 100, reward, xp: m.rewards.xp + this.score, level: after.level, levelUp: after.level > before.level, xpFrac: after.into / after.need,
       checkpoint: '', next: next ? next.title : locked ? `${locked.title} — ${locked.requires?.totalDistance ? `run ${locked.requires.totalDistance.toLocaleString('en-US')} m in total to unlock` : 'locked'}` : 'Every case is closed. Outstanding work, officer.', patrol: false, hasNext: !!next,
     });
@@ -1041,12 +1061,18 @@ export class Game {
         if (this.spawner.throwAt(c.d - 4, c.lane, ['crates', 'barrels', 'tyres'][Math.floor(Math.random() * 3)])) { c.act('Throw', 0.5, 0.06, 1.5); this.audio.throwObj(); }
         else this.throwT = 0.6;
       }
-      if (!this.capture && p.d >= m.length) this.startCapture();
+      // wear the suspect down: staying on their heels can force the arrest before the end of the route
+      const early = m.pursuit.early;
+      if (early && !this.capture && p.d >= early.from) {
+        if (!this.tiringTold) { this.tiringTold = true; this.ui.radio('The suspect is tiring. Stay right on their heels and they will run out of breath!'); this.audio.radio(); }
+        this.pursuit.tire(dt, p.speedFactor, !c.riding);
+      }
+      if (!this.capture && (p.d >= m.length || this.pursuit.exhausted)) this.startCapture(p.d < m.length);
       if (this.capture) {
         this.capture.update(dt, this.pursuit.gap);
         if (this.state !== 'running') return;
       }
-      if (p.d >= m.limit) { this.fail('escaped'); return; }
+      if (p.d >= (this.capture ? this.captureLimit : m.limit)) { this.fail('escaped'); return; }
     }
 
     if (this.beamT > 0) { this.beamT -= dt; this.beam.visible = this.beamT > 0; }
@@ -1059,6 +1085,7 @@ export class Game {
       this.ui.hud({
         distance: this.distance, score: this.score, coins: this.runCoins, gap: this.pursuit.gap, closeness: this.pursuit.closeness, danger: this.pursuit.danger,
         hearts: this.pursuit.hearts, zone: zone.name,
+        stamina: !m.patrol && !!m.pursuit.early && !this.capture && p.d >= m.pursuit.early.from ? this.pursuit.stamina : -1, onHeels: this.pursuit.onHeels && !this.criminal.riding,
         ability: { fill: ab.fill, ready: ab.ready, active: ab.active, cooling: ab.cooldown > 0 && !ab.active, charge: Math.floor(ab.charge), cost: ab.cost, left: ab.left },
       });
       const cap = this.capture;

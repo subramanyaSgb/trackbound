@@ -30,6 +30,8 @@ export interface MenuModel {
 export interface HudSetup { title: string; length: number; zones: number[]; patrol: boolean; hearts: number; suspect: string; ability: AbilityDef; touch: boolean }
 export interface HudModel {
   distance: number; score: number; coins: number; gap: number; closeness: number; danger: boolean; hearts: number; zone: string;
+  /** Suspect stamina 0..1, or -1 while it is not in play. */
+  stamina: number; onHeels: boolean;
   ability: { fill: number; ready: boolean; active: boolean; cooling: boolean; charge: number; cost: number; left: number };
 }
 export interface CaptureModel { phase: 'approach' | 'lock'; type: CaptureType; meter: number; windowAt: number; window: number; hits: number; need: number; tries: number; aligned: boolean; range: number; gap: number }
@@ -42,7 +44,7 @@ export interface UiHandlers {
   sheet(s: SheetName | null): void; previewChar(id: string): void; chooseChar(id: string): void;
   buyUpgrade(k: UpgradeKind): void; claim(id: string): void; claimSeason(id: string): void; selectMission(id: string): void;
   setting(key: string, value: number | string | boolean): void;
-  resetProgress(): void; install(): void; power(): void; skip(): void;
+  resetProgress(): void; install(): void; power(): void; skip(): void; restart(): void;
 }
 const TITLES: Record<SheetName, string> = { heroes: 'HEROES', missions: 'CASE FILES', bounties: 'BOUNTIES', shop: 'UPGRADES', seasons: 'SEASONS', settings: 'SETTINGS' };
 
@@ -64,6 +66,10 @@ export class Ui {
     bind('btn-quit', h.home); bind('btn-home', h.home);
     bind('btn-retry', () => (this.wonNext ? h.next() : h.retry()));
     bind('sheet-close', () => h.sheet(null));
+    const askRestart = () => $('confirm-restart').classList.add('show');
+    bind('btn-restart', askRestart); bind('btn-pause-restart', askRestart);
+    bind('btn-restart-no', () => $('confirm-restart').classList.remove('show'));
+    bind('btn-restart-yes', () => { $('confirm-restart').classList.remove('show'); h.restart(); });
     bind('btn-reset-no', () => $('confirm').classList.remove('show'));
     bind('btn-reset-yes', () => { $('confirm').classList.remove('show'); h.resetProgress(); });
     document.querySelectorAll<HTMLElement>('#menu [data-sheet]').forEach((b) => b.addEventListener('click', () => { h.click(); h.sheet(b.dataset.sheet as SheetName); }));
@@ -188,6 +194,8 @@ export class Ui {
     this.set('c-brief', c.brief);
     this.set('c-meta', c.patrol ? `Best score ${fmt(m.patrolBest)}` : c.checkpoint ? `Resume at ${c.checkpoint} · ${fmt(c.at)} / ${fmt(c.length)} m` : `Suspect: ${c.criminal} · ${fmt(c.length)} m pursuit`);
     this.set('play-label', c.patrol ? 'START PATROL' : c.checkpoint ? 'RESUME PURSUIT' : 'START PURSUIT');
+    this.cls('btn-restart', 'on', !!c.checkpoint);
+    this.cls('btn-case', 'progress', !!c.checkpoint);
     $('sheet').classList.toggle('show', !!sheet);
     $('menu').classList.toggle('sheet-open', !!sheet);
     if (!sheet) return;
@@ -272,6 +280,7 @@ export class Ui {
     this.setup = s;
     this.capType = null;
     $('hud').classList.toggle('patrol', s.patrol);
+    $('btn-pause-restart').style.display = s.patrol ? 'none' : '';
     $('h-ticks').innerHTML = s.patrol ? '' : s.zones.slice(1).map((z) => `<u style="left:${(z * 100).toFixed(2)}%"></u>`).join('');
     this.set('h-len', s.patrol ? 'm' : `/ ${fmt(s.length)} m`);
     this.set('h-suspect', s.suspect);
@@ -303,6 +312,8 @@ export class Ui {
       this.style('h-close', 'width', pct(h.closeness));
       this.style('h-crim', 'left', pct(1 - h.closeness));
       this.cls('h-chase', 'danger', h.danger);
+      this.cls('h-stamina', 'show', h.stamina >= 0);
+      if (h.stamina >= 0) { this.style('h-stam', 'width', pct(h.stamina)); this.cls('h-stamina', 'draining', h.onHeels); }
       this.style('h-prog', 'width', pct(h.distance / s.length));
     }
     // ability button: ring = charge, or time left while active

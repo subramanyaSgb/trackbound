@@ -27,6 +27,9 @@
 - Gap is simulation, not decoration: see `src/pursuit/Pursuit.ts` and its tests.
 - Six cases plus Free Patrol; the boss case unlocks at 100,000 m of lifetime distance.
 - Checkpoints at every zone; hearts instead of one-hit death.
+- Early capture: staying on the suspect's heels drains their stamina and opens the finale before the
+  end of the route. 50,000 m is the longest case 1 can last, not how long it must last: an
+  unhit autopilot run makes the arrest at about 10,300 m (6.8 minutes).
 - Playable finale (taser, net launcher or tackle depending on the case) and an arrest cinematic.
 - Intro cinematic per case: robbery, suspect bolts, dispatch call, go.
 
@@ -47,7 +50,7 @@
 - Save migrates endless-runner saves (coins, XP and upgrades carry over).
 
 ## 3. Verified
-- `npm test`: 22 unit tests.
+- `npm test`: 25 unit tests.
 - `npm run test:e2e`: 61 checks in a real browser against the production build, desktop and phone-sized touch.
 - Autopilot soak of the full 50,000 m first case: completes in about 27.5 minutes of game time.
 - Desktop frame rate at High quality: 144 fps (display-capped), 220–330 draw calls.
@@ -66,6 +69,6 @@
   fixed in `src/data/seasons.ts`; there is no server, so new content ships with a new build.
 - **No costumes, equipment shop or character upgrades** beyond the four shop upgrades and hero unlocks.
 - **Not yet run on a physical phone.** Frame rate on mid-range Android and touch feel are unverified.
-- **Balance is a first pass.** Case lengths follow the brief (case 1 is 50,000 m, about 28 minutes
-  end to end with checkpoints roughly every 2–6 minutes); gap, heart and economy numbers have only been
-  tuned against the autopilot.
+- **Balance is a first pass.** Case 1 runs from about 7 minutes (clean play, early capture) up to about
+  28 minutes (the full 50,000 m); gap, heart, stamina and economy numbers have only been tuned against
+  the autopilot. Players who capture early do not see the later environments of that case.

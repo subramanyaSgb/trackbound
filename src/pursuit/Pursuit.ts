@@ -10,6 +10,10 @@ export const FAIL_TEXT: Record<FailReason, { title: string; detail: string }> = 
 
 /** Gap added when the officer hits something. */
 export const HIT_GAP = 5;
+/** How close to the zone floor counts as being on the suspect's heels (m). */
+export const HEEL_RANGE = 4;
+/** Share of stamina the suspect gets back when the officer crashes. */
+export const HIT_STAMINA = 0.12;
 /** Gap the officer wins back when the suspect trips. */
 export const TRIP_GAP = 7;
 
@@ -27,6 +31,8 @@ export class Pursuit {
   failed: FailReason | null = null;
   /** Seconds of clean running since the last collision (drives the "closing in" bonus). */
   clean = 0;
+  /** Suspect's stamina, 1 = fresh, 0 = exhausted (the capture can begin). Only drains once tiring starts. */
+  stamina = 1;
 
   constructor(readonly mission: MissionDef, startGap = mission.pursuit.startGap, floor = mission.zones[0].minGap) {
     this.gap = startGap;
@@ -39,6 +45,18 @@ export class Pursuit {
     return 1 - Math.min(1, Math.max(0, (this.gap - this.floor) / (this.mission.pursuit.loseGap - this.floor)));
   }
   get danger() { return this.gap > this.mission.pursuit.loseGap * 0.75; }
+  get onHeels() { return this.gap <= this.floor + HEEL_RANGE; }
+  get exhausted() { return this.stamina <= 0; }
+
+  /**
+   * Wear the suspect down: call each frame once the mission's early-capture distance is passed.
+   * Stamina only drains while the officer is at full pace and right behind a suspect who is on foot.
+   */
+  tire(dt: number, speedFrac: number, onFoot: boolean) {
+    const hold = this.mission.pursuit.early?.hold;
+    if (!hold || this.failed || !onFoot || speedFrac < 0.95 || !this.onHeels) return;
+    this.stamina = Math.max(0, this.stamina - dt / hold);
+  }
 
   /**
    * @param speedFrac officer's current speed relative to normal pace (below 1 while stumbling)
@@ -64,6 +82,7 @@ export class Pursuit {
     this.clean = 0;
     this.hearts--;
     this.gap += penalty;
+    this.stamina = Math.min(1, this.stamina + HIT_STAMINA); // the suspect catches their breath
     if (this.hearts <= 0) this.failed = 'injured';
     else if (this.gap >= this.mission.pursuit.loseGap) this.failed = 'lost';
     return !this.failed;

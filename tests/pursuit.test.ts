@@ -54,6 +54,44 @@ describe('pursuit gap', () => {
   });
 });
 
+describe('early capture (suspect stamina)', () => {
+  const hold = M1.pursuit.early!.hold;
+  const wear = (p: Pursuit, secs: number, speedFrac = 1, onFoot = true) => { for (let i = 0; i < secs * 60; i++) p.tire(1 / 60, speedFrac, onFoot); };
+
+  it('drains only while the officer is at full pace on the heels of a suspect on foot', () => {
+    const p = new Pursuit(M1);
+    wear(p, 10); // still far behind
+    expect(p.stamina).toBe(1);
+    p.gap = p.floor + 2;
+    wear(p, 10, 0.5); // stumbling
+    wear(p, 10, 1, false); // suspect on a motorcycle
+    expect(p.stamina).toBe(1);
+    wear(p, hold / 2);
+    expect(p.stamina).toBeCloseTo(0.5, 2);
+    expect(p.exhausted).toBe(false);
+    wear(p, hold / 2 + 1);
+    expect(p.exhausted).toBe(true);
+  });
+
+  it('gives the suspect breath back when the officer crashes', () => {
+    const p = new Pursuit(M1);
+    p.gap = p.floor;
+    wear(p, hold / 2);
+    const before = p.stamina;
+    p.hit();
+    expect(p.stamina).toBeGreaterThan(before);
+  });
+
+  it('is configured to start after the opening zones and before the end of every case', () => {
+    for (const m of MISSIONS) {
+      expect(m.pursuit.early, m.id).toBeTruthy();
+      expect(m.pursuit.early!.from).toBeGreaterThanOrEqual(m.zones[1].at);
+      expect(m.pursuit.early!.from).toBeLessThan(m.length / 2);
+    }
+    expect(PATROL.pursuit.early).toBeUndefined();
+  });
+});
+
 describe('ability charge', () => {
   it('charges from coins, activates once full, and never double counts', () => {
     const ab = new Abilities('flight');

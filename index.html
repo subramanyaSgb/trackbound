@@ -68,6 +68,7 @@
         <i id="c-meta"></i>
       </button>
       <button id="btn-play" class="btn gold big"><svg><use href="#i-play"/></svg><span id="play-label">START PURSUIT</span></button>
+      <button id="btn-restart" class="btn small restart"><svg><use href="#i-retry"/></svg>RESTART CASE FROM THE START</button>
       <nav>
         <button data-sheet="heroes"><svg><use href="#i-runner"/></svg><span>Heroes</span></button>
         <button data-sheet="missions"><svg><use href="#i-badge"/></svg><span>Cases</span></button>
@@ -93,6 +94,7 @@
     <div class="chase" id="h-chase">
       <div class="gapbar"><svg class="cop"><use href="#i-badge"/></svg><div class="track"><i id="h-close"></i><svg id="h-crim" class="crim"><use href="#i-mask"/></svg></div></div>
       <div class="gaptxt"><b id="h-gap">0</b><em>m behind</em> <span id="h-suspect"></span></div>
+      <div class="stamina" id="h-stamina"><span>SUSPECT STAMINA</span><div><i id="h-stam"></i></div></div>
     </div>
     <div class="right">
       <div class="chip" id="h-coinchip"><svg><use href="#i-coin"/></svg><b id="h-coins">0</b></div>
@@ -122,6 +124,7 @@
       <h2>PAUSED</h2>
       <p>Your progress is saved at every checkpoint.</p>
       <button id="btn-resume" class="btn gold"><svg><use href="#i-play"/></svg>RESUME</button>
+      <button id="btn-pause-restart" class="btn"><svg><use href="#i-retry"/></svg>RESTART CASE</button>
       <button id="btn-quit" class="btn"><svg><use href="#i-home"/></svg>HOME</button>
     </div>
   </div>
@@ -147,6 +150,15 @@
       <button id="btn-retry" class="btn gold"><svg><use href="#i-retry"/></svg><span id="retry-label">RETRY</span></button>
     </div>
   </section>
+
+  <div id="confirm-restart" class="screen dim">
+    <div class="panel">
+      <h2>RESTART THIS CASE?</h2>
+      <p id="restart-text">You will start the pursuit again from the robbery. Your checkpoint will be lost; coins you have banked are kept.</p>
+      <button id="btn-restart-yes" class="btn gold"><svg><use href="#i-retry"/></svg>RESTART CASE</button>
+      <button id="btn-restart-no" class="btn">KEEP MY CHECKPOINT</button>
+    </div>
+  </div>
 
   <div id="confirm" class="screen dim">
     <div class="panel">

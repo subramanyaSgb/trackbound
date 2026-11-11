@@ -110,7 +110,7 @@ input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%
 .pw .ico { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:17px; border:2px solid rgba(255,255,255,.7); }
 .pw .t { width:54px; height:8px; border-radius:99px; background:rgba(255,255,255,.18); overflow:hidden; } .pw .t i { display:block; height:100%; border-radius:99px; background:#fff; transition:width .12s linear; }
 @keyframes slidein { from { transform:translateX(-30px); opacity:0; } }
-.toast { position:fixed; left:50%; top:calc(74px + env(safe-area-inset-top)); z-index:40; transform:translate(-50%,-20px) scale(.9); opacity:0; pointer-events:none; max-width:88vw; padding:10px 18px; border-radius:99px; font-size:14px; text-align:center;
+.toast { position:fixed; left:50%; top:calc(106px + env(safe-area-inset-top)); z-index:40; transform:translate(-50%,-20px) scale(.9); opacity:0; pointer-events:none; max-width:88vw; padding:10px 18px; border-radius:99px; font-size:14px; text-align:center;
   color:#053b2a; background:linear-gradient(180deg,#7dffd2,#1fc48e); border:2.5px solid #0b0f3a; box-shadow:0 4px 0 #0b0f3a; transition:.3s cubic-bezier(.2,.9,.3,1.4); }
 .toast.show { opacity:1; transform:translate(-50%,0); }
 
@@ -143,6 +143,19 @@ nav { grid-template-columns:repeat(3,1fr); }
 .case span:not(.k) { font-size:12px; font-weight:700; color:#c3ccff; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .case i { font-style:normal; font-size:11px; letter-spacing:.04em; color:var(--sky); margin-top:2px; }
 
+/* compact case card: the hero stays visible above it */
+.case { padding:8px 14px 9px; }
+.case span:not(.k) { -webkit-line-clamp:1; }
+.case.progress span:not(.k) { display:none; }
+.btn.restart { display:none; height:34px; font-size:13px; letter-spacing:.06em; margin-top:-4px; background:linear-gradient(180deg,#3a4bb8,#1c2680); }
+.btn.restart.on { display:flex; }
+.btn.restart svg { font-size:15px; }
+@media (max-width:560px) {
+  .case { padding:7px 12px 8px; } .case b { font-size:17px; } .case span:not(.k) { display:none; }
+  #menu footer { gap:9px; } .btn.big { height:62px; font-size:28px; } nav button { padding:7px 0 5px; } nav button svg { font-size:21px; }
+  #menu .hint { display:none; } .logo.sm { font-size:clamp(30px, 9vw, 60px); margin-top:1vh; }
+}
+
 /* ---- sheets: heroes, cases, seasons */
 .who em, .card em { display:block; font-style:normal; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-top:1px; }
 .facts { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; } .facts span { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:99px; background:#0b0f3a; font-size:11px; color:#dfe4ff; } .facts svg { font-size:13px; }
@@ -173,6 +186,12 @@ nav { grid-template-columns:repeat(3,1fr); }
 .powers { top:calc(66px + env(safe-area-inset-top)); }
 .radio { position:absolute; left:calc(10px + env(safe-area-inset-left)); top:calc(64px + env(safe-area-inset-top)); max-width:min(300px,62vw); display:flex; gap:8px; align-items:flex-start; padding:8px 12px 8px 8px; border-radius:14px; background:rgba(11,15,58,.86); border:2.5px solid #0b0f3a; opacity:0; transform:translateX(-20px); transition:.3s; }
 .radio.show { opacity:1; transform:none; } .radio svg { font-size:22px; color:#4d8dff; margin-top:1px; } .radio p { margin:0; font-size:12px; font-weight:700; line-height:1.3; } .radio b { display:block; font-size:9px; letter-spacing:.18em; color:var(--gold); }
+
+.stamina { display:none; align-items:center; gap:6px; font-size:9px; letter-spacing:.14em; text-shadow:0 1px 3px #0b0f3a; white-space:nowrap; }
+.stamina.show { display:flex; } .stamina div { width:110px; height:8px; border-radius:99px; background:#0b0f3a; border:2px solid #0b0f3a; overflow:hidden; }
+.stamina i { display:block; height:100%; width:100%; border-radius:99px; background:linear-gradient(90deg,#ff5a5f,#ffc928); transition:width .2s linear; }
+.stamina.draining span { color:var(--gold); } .stamina.draining i { animation:pulse .6s infinite; }
+.hud.patrol .stamina { display:none; }
 
 /* ---- ability / fire button */
 .power { --c:#3b82ff; --fill:0deg; position:absolute; right:calc(16px + env(safe-area-inset-right)); bottom:calc(22px + env(safe-area-inset-bottom)); width:84px; height:84px; border-radius:50%; display:grid; place-items:center; pointer-events:none;
@@ -216,7 +235,7 @@ nav { grid-template-columns:repeat(3,1fr); }
 .results.won .reward span { background:linear-gradient(180deg,#ffe669,var(--amber)); color:#4a2600; }
 
 @media (max-width:560px) {
-  .chase { top:calc(60px + env(safe-area-inset-top)); width:min(88vw,340px); } .radio, .powers { top:calc(118px + env(safe-area-inset-top)); }
+  .chase { top:calc(60px + env(safe-area-inset-top)); width:min(88vw,340px); } .radio, .powers { top:calc(136px + env(safe-area-inset-top)); } .toast { top:calc(150px + env(safe-area-inset-top)); }
   .route { width:min(58vw,420px); left:calc(10px + env(safe-area-inset-left)); transform:none; justify-items:start; } .capture { width:92vw; bottom:calc(132px + env(safe-area-inset-bottom)); }
   .results .big { font-size:44px; } .case b { font-size:18px; }
 }
