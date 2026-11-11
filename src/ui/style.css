@@ -246,3 +246,7 @@ nav { grid-template-columns:repeat(3,1fr); }
   .sheet { left:auto; right:24px; bottom:24px; width:460px; max-height:82vh; border-radius:28px; border-bottom:3px solid #0b0f3a; transform:translateX(120%); }
   .results { left:50%; right:auto; margin-left:-240px; width:480px; bottom:24px; transform:translateY(120%); }
 }
+
+/* the play button shares the "big" class name with the results headline: drop that rule's outline */
+.btn.big { -webkit-text-stroke:0; paint-order:normal; line-height:1; }
+.btn.gold.big { color:#3b1d00; text-shadow:0 1.5px 0 rgba(255,255,255,.55); }
