@@ -25,6 +25,23 @@ server and saves screenshots; `tools/viewer.html` (dev server only) shows any mo
 `dist/` is a static site with relative paths: upload it to any static host (Netlify, Vercel,
 GitHub Pages, S3, nginx). Installing as an app and offline play need HTTPS (or localhost).
 
+## Versions and updates
+Every build is stamped with the `package.json` version, the git commit and the build time. The menu shows
+it (for example `v0.2.0 (54ccd7f)`), and Settings has a Version row with a CHECK button.
+
+An installed copy runs from its cache, so it keeps playing the build it has until a newer one is
+downloaded and accepted:
+1. On launch, on returning to the app, and on CHECK, the game reads `version.json` from the server
+   (never cached) and compares it with its own stamp.
+2. If the server has a newer build, it is downloaded in the background and an UPDATE button appears on
+   the menu and in Settings. A pursuit in progress is never interrupted.
+3. Tapping UPDATE switches to the new build and reloads. Offline, the game still starts and says it
+   could not check.
+
+Bump `version` in `package.json` for a release you want players to recognise; the commit and build
+time change on every deploy regardless. `npm run build && node tools/update-test.mjs` proves the
+whole path against two real builds.
+
 ## Controls
 | | Touch | Keyboard |
 |---|---|---|

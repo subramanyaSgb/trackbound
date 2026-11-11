@@ -26,6 +26,7 @@ export interface MenuModel {
   seasons: { id: string; number: number; name: string; tagline: string; colors: [string, string]; status: 'live' | 'upcoming' | 'ended'; preview: string[]; xp: number; heroes: string[];
     rewards: { xp: number; coins: number; label: string; state: 'claimed' | 'ready' | 'locked' }[] }[];
   settings: { music: number; sfx: number; quality: Quality; sensitivity: number; haptics: boolean };
+  version: { label: string; built: string; status: 'idle' | 'checking' | 'latest' | 'available' | 'offline' | 'updating'; latest: string; canCheck: boolean; dev: boolean };
 }
 export interface HudSetup { title: string; length: number; zones: number[]; patrol: boolean; hearts: number; suspect: string; ability: AbilityDef; touch: boolean }
 export interface HudModel {
@@ -44,7 +45,7 @@ export interface UiHandlers {
   sheet(s: SheetName | null): void; previewChar(id: string): void; chooseChar(id: string): void;
   buyUpgrade(k: UpgradeKind): void; claim(id: string): void; claimSeason(id: string): void; selectMission(id: string): void;
   setting(key: string, value: number | string | boolean): void;
-  resetProgress(): void; install(): void; power(): void; skip(): void; restart(): void;
+  resetProgress(): void; install(): void; power(): void; skip(): void; restart(): void; checkUpdate(): void; applyUpdate(): void;
 }
 const TITLES: Record<SheetName, string> = { heroes: 'HEROES', missions: 'CASE FILES', bounties: 'BOUNTIES', shop: 'UPGRADES', seasons: 'SEASONS', settings: 'SETTINGS' };
 
@@ -66,6 +67,7 @@ export class Ui {
     bind('btn-quit', h.home); bind('btn-home', h.home);
     bind('btn-retry', () => (this.wonNext ? h.next() : h.retry()));
     bind('sheet-close', () => h.sheet(null));
+    bind('btn-update', h.applyUpdate);
     const askRestart = () => $('confirm-restart').classList.add('show');
     bind('btn-restart', askRestart); bind('btn-pause-restart', askRestart);
     bind('btn-restart-no', () => $('confirm-restart').classList.remove('show'));
@@ -95,6 +97,8 @@ export class Ui {
       else if (act === 'haptics') { const on = !t.classList.contains('on'); t.classList.toggle('on', on); h.setting('haptics', on); if (on) navigator.vibrate?.(40); }
       else if (act === 'reset') $('confirm').classList.add('show');
       else if (act === 'install') h.install();
+      else if (act === 'check-update') h.checkUpdate();
+      else if (act === 'apply-update') h.applyUpdate();
     });
     body.addEventListener('input', (e) => {
       const t = e.target as HTMLInputElement;
@@ -196,6 +200,9 @@ export class Ui {
     this.set('play-label', c.patrol ? 'START PATROL' : c.checkpoint ? 'RESUME PURSUIT' : 'START PURSUIT');
     this.cls('btn-restart', 'on', !!c.checkpoint);
     this.cls('btn-case', 'progress', !!c.checkpoint);
+    this.set('m-version', m.version.label);
+    this.cls('btn-update', 'on', m.version.status === 'available' || m.version.status === 'updating');
+    this.set('update-label', m.version.status === 'updating' ? 'UPDATING…' : 'UPDATE AVAILABLE — TAP TO INSTALL');
     $('sheet').classList.toggle('show', !!sheet);
     $('menu').classList.toggle('sheet-open', !!sheet);
     if (!sheet) return;
@@ -266,13 +273,21 @@ export class Ui {
   private settings(m: MenuModel) {
     const s = m.settings;
     const q = (['auto', 'low', 'medium', 'high'] as Quality[]).map((v) => `<button data-act="quality" data-id="${v}" class="${s.quality === v ? 'on' : ''}">${v === 'medium' ? 'Med' : v}</button>`).join('');
-    return `<label class="set">Music<input type="range" min="0" max="1" step="0.05" value="${s.music}" data-set="music"></label>
+    return `${this.versionRow(m)}
+      <label class="set">Music<input type="range" min="0" max="1" step="0.05" value="${s.music}" data-set="music"></label>
       <label class="set">Sound<input type="range" min="0" max="1" step="0.05" value="${s.sfx}" data-set="sfx"></label>
       <div class="set">Graphics<div class="seg">${q}</div></div>
       <label class="set">Swipe sensitivity<input type="range" min="0.6" max="1.8" step="0.1" value="${s.sensitivity}" data-set="sensitivity"></label>
       <div class="set">Vibration<button class="toggle ${s.haptics ? 'on' : ''}" data-act="haptics" aria-label="Vibration"></button></div>
       ${m.canInstall ? `<div class="set">Install as app<button class="btn small gold" data-act="install">INSTALL</button></div>` : ''}
       <div class="set">Reset progress<button class="btn small red" data-act="reset">RESET</button></div>`;
+  }
+
+  private versionRow(m: MenuModel) {
+    const v = m.version;
+    const note = v.status === 'available' ? `New version ready${v.latest ? `: ${v.latest}` : ''}` : v.status === 'updating' ? 'Installing the new version…' : v.status === 'latest' ? 'You are on the latest version' : v.status === 'checking' ? 'Checking…' : v.status === 'offline' ? 'Could not check — you are offline' : v.built ? `Built ${v.built}` : '';
+    const btn = !v.canCheck ? '' : v.status === 'available' ? `<button class="btn small mint" data-act="apply-update">UPDATE</button>` : v.status === 'updating' || v.status === 'checking' ? `<button class="btn small" disabled>…</button>` : `<button class="btn small" data-act="check-update">CHECK</button>`;
+    return `<div class="set ver"><span>Version<b>${v.label}</b><small>${note}${v.status !== 'idle' && v.built ? ` · built ${v.built}` : ''}${v.dev ? ' · development build' : ''}</small></span>${btn}</div>`;
   }
 
   // ---------------------------------------------------------------- HUD

@@ -28,6 +28,7 @@ import { BEND, BendDriver, installBend } from './Bend';
 import { CFG, laneX, paceAt } from './config';
 import { Input, type Action } from './Input';
 import { Save, levelFor, type Quality, type UpgradeKind } from './Save';
+import { BUILD, Updates, builtLabel, versionLabel } from './Updates';
 
 type State = 'loading' | 'menu' | 'intro' | 'running' | 'paused' | 'takedown' | 'failing' | 'over';
 interface InstallEvent extends Event { prompt(): Promise<void> }
@@ -44,6 +45,7 @@ export class Game {
   readonly save = new Save();
   readonly assets = new Assets();
   readonly powers = new PowerUps();
+  readonly updates = new Updates();
   readonly ui: Ui;
   readonly input: Input;
   player!: Player;
@@ -94,6 +96,7 @@ export class Game {
   private captureLimit = 0;
   private pace = CFG.startSpeed;
   private slowFrames = 0;
+  private idleAcc = 0;
   private autoTier: Exclude<Quality, 'auto'> = 'high';
   private sheet: SheetName | null = null;
   private preview = 'officer';
@@ -141,6 +144,8 @@ export class Game {
       power: () => this.onAction('power'),
       skip: () => this.skipIntro(),
       restart: () => this.restartCase(),
+      checkUpdate: () => { void this.updates.check(); },
+      applyUpdate: () => { void this.updates.apply(); },
     });
     this.input = new Input(canvas, (a) => this.onAction(a));
     this.input.onDrag = (dx) => { if (this.state === 'menu') this.player.orbit += dx * 0.012; };
@@ -199,6 +204,12 @@ export class Game {
     this.applyQuality();
     this.resize();
     this.toMenu(true);
+    // version awareness: tell the player when a newer build is live, but only swap it in when they say so
+    this.updates.onChange = () => {
+      if (this.state === 'menu') this.refreshMenu();
+      if (this.updates.status === 'available' && this.state === 'menu') this.ui.toast('A new version is ready — tap UPDATE');
+    };
+    void this.updates.start();
     this.renderer.compile(this.scene, this.camera.cam);
     this.renderer.setAnimationLoop(() => this.frame());
   }
@@ -281,6 +292,7 @@ export class Game {
       }),
       settings: { music: s.music, sfx: s.sfx, quality: s.quality, sensitivity: s.sensitivity, haptics: s.haptics },
       canInstall: !!this.installEvt,
+      version: { label: versionLabel(), built: builtLabel(), status: this.updates.status, latest: this.updates.latest ? versionLabel(this.updates.latest) : '', canCheck: this.updates.supported, dev: !BUILD.commit && !this.updates.supported },
     };
   }
 
@@ -1141,7 +1153,16 @@ export class Game {
   }
 
   private frame() {
-    const raw = this.clock.getDelta();
+    let raw = this.clock.getDelta();
+    // Menus, pause and results draw at about 30 fps. That halves battery use while nothing fast is
+    // happening, and leaves the browser idle time between frames for background work such as
+    // downloading an update (a page that renders flat out can starve it indefinitely).
+    if (this.state === 'menu' || this.state === 'over' || this.state === 'paused' || this.state === 'loading') {
+      this.idleAcc += raw;
+      if (this.idleAcc < 1 / 31) return;
+      raw = this.idleAcc;
+      this.idleAcc = 0;
+    }
     this.update(Math.min(raw, 1 / 30));
     this.renderer.render(this.scene, this.camera.cam);
     // adaptive quality (auto mode only): sustained slow frames step the tier down

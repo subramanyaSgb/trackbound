@@ -9,6 +9,7 @@ async function boot() {
   await Promise.all([document.fonts.load('400 40px "Lilita One"'), document.fonts.load('800 20px Nunito')]).catch(() => {});
   const game = new Game(document.getElementById('game') as HTMLCanvasElement);
   (window as unknown as { __game: Game }).__game = game; // debug/e2e hook
+  (window as unknown as { __APP_BUILT_CHECK: () => string }).__APP_BUILT_CHECK = () => __APP_BUILT__;
   await game.init();
 }
 boot().catch((e) => {
@@ -16,4 +17,3 @@ boot().catch((e) => {
   document.querySelector('#splash .load p')!.textContent = 'Could not load the game. Check your connection and reload.';
 });
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) addEventListener('load', () => { void navigator.serviceWorker.register('./sw.js'); });
