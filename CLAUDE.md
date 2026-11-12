@@ -148,3 +148,12 @@ tools/          build-assets, e2e, update-test, shots, viewer.html
 Stylised art rather than realistic; partly procedural per-character animation; visual-only road
 curvature; synthesised audio; no bus model; Seasons 2 and 3 are placeholders; no costumes or equipment
 shop; never run on a physical phone; balance tuned only against the autopilot.
+
+## Trailer and README media
+- `docs/media/` holds the 20 s launch trailer (`trackbound-pursuit.mp4`), a silent looping preview
+  (`preview.webp`) and the poster. The README shows the preview and links it to the MP4; GitHub does
+  not play repo-hosted video inline, so do not swap it for a `<video>` tag.
+- The trailer was made with the `/brag` plugin (brag-slim method): `brag-output/work/capture.mjs`
+  steps the real game frame by frame with a title overlay, `audio.mjs` synthesises the soundtrack, and
+  FFmpeg (installed system-wide via winget, not on the Git Bash PATH) encodes it. `brag-output/` is
+  git-ignored; re-run those two scripts to re-roll the video.

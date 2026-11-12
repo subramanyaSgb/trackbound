@@ -7,6 +7,9 @@ dist/
 # Test screenshots
 shots/
 
+# /brag working files (frames, audio, scripts); the finished trailer lives in docs/media
+brag-output*/
+
 # Logs
 *.log
 npm-debug.log*
