@@ -64,8 +64,10 @@ describe('early capture (suspect stamina)', () => {
     expect(p.stamina).toBe(1);
     p.gap = p.floor + 2;
     wear(p, 10, 0.5); // stumbling
-    wear(p, 10, 1, false); // suspect on a motorcycle
     expect(p.stamina).toBe(1);
+    wear(p, 10, 1, false); // a suspect on a motorcycle tires at half the rate
+    expect(p.stamina).toBeCloseTo(1 - 5 / hold, 3);
+    p.stamina = 1;
     wear(p, hold / 2);
     expect(p.stamina).toBeCloseTo(0.5, 2);
     expect(p.exhausted).toBe(false);
@@ -82,10 +84,10 @@ describe('early capture (suspect stamina)', () => {
     expect(p.stamina).toBeGreaterThan(before);
   });
 
-  it('is configured to start after the opening zones and before the end of every case', () => {
+  it('is configured to start after the opening stretch and well before the end of every case', () => {
     for (const m of MISSIONS) {
       expect(m.pursuit.early, m.id).toBeTruthy();
-      expect(m.pursuit.early!.from).toBeGreaterThanOrEqual(m.zones[1].at);
+      expect(m.pursuit.early!.from).toBeGreaterThanOrEqual(1000); // the opening stretch is always a plain chase
       expect(m.pursuit.early!.from).toBeLessThan(m.length / 2);
     }
     expect(PATROL.pursuit.early).toBeUndefined();

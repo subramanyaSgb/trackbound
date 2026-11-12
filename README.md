@@ -26,8 +26,9 @@ server and saves screenshots; `tools/viewer.html` (dev server only) shows any mo
 GitHub Pages, S3, nginx). Installing as an app and offline play need HTTPS (or localhost).
 
 ## Versions and updates
-Every build is stamped with the `package.json` version, the git commit and the build time. The menu shows
-it (for example `v0.2.0 (54ccd7f)`), and Settings has a Version row with a CHECK button.
+Every build is stamped with the `package.json` version, the git commit and the build time. The home screen shows
+it under the coin counter (for example `v0.2.0 (54ccd7f) · latest`), and Settings has a Version row
+with a CHECK button.
 
 An installed copy runs from its cache, so it keeps playing the build it has until a newer one is
 downloaded and accepted:
@@ -63,10 +64,13 @@ Tap anywhere to skip the intro. In the menu, drag to turn your hero.
 - **Failing:** three collisions in one zone, letting the gap reach the limit, or running out of road or
   capture attempts.
 - **Ability:** coins fill the charge ring; when full, activate it. Charging never spends your coins.
-- **Early capture:** a few zones in, the suspect starts to tire. A stamina bar appears under the gap; it
+- **Coaching:** the first time each thing happens (moving, the gap, a crash, a charged power, the
+  stamina bar, the final pursuit, the capture meter) a card explains it in one sentence without stopping
+  play. The `?` button on the home screen opens a three-step "How to play".
+- **Early capture:** after the opening stretch (1,500 m in case 1) the suspect starts to tire. A stamina bar appears under the gap; it
   drains while you stay right on their heels at full pace and refills a little each time you crash. When
-  it is empty the final capture starts there and then, so a clean run of case 1 ends near 10,000 m
-  (about 7 minutes) instead of at 50,000 m. Tuned per case by `pursuit.early` in `src/data/missions.ts`.
+  it is empty the final capture starts there and then, so a clean run of case 1 ends near 3,600 m
+  (under 3 minutes) instead of at 50,000 m. A suspect on a motorcycle tires at half the rate. Tuned per case by `pursuit.early` in `src/data/missions.ts`.
 - **Capture:** when the suspect is exhausted (or at the end of the route), close to range, line up in
   their lane and fire inside the green window of the timing meter. Enough hits starts the arrest;
   running out of attempts fails the case.

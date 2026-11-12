@@ -93,6 +93,8 @@ export class Game {
   private beamT = 0;
   private readyPinged = false;
   private tiringTold = false;
+  private runT = 0;
+  private touch = matchMedia('(pointer: coarse)').matches;
   private captureLimit = 0;
   private pace = CFG.startSpeed;
   private slowFrames = 0;
@@ -500,9 +502,18 @@ export class Game {
     this.startPursuit();
   }
 
+  /** First-time coaching: each tip is shown once per save, in plain words, without stopping play. */
+  private tip(id: string, text: string) {
+    const t = this.save.data.tips;
+    if (t[id]) return;
+    t[id] = 1;
+    this.ui.coach(text);
+  }
+
   private beginRun() {
     this.state = 'running';
     this.stateT = 0;
+    this.runT = 0;
     this.player.scripted = false;
     this.criminal.scripted = false;
     this.player.start();
@@ -798,6 +809,7 @@ export class Game {
     if (!this.pursuit.hit()) { this.fail(this.pursuit.failed!); return; }
     p.stumble();
     this.ui.toast(this.mission.patrol ? 'Ouch!' : 'You hit something — the suspect is pulling away!');
+    this.tip('hit', 'Each crash costs a heart and lets the thief get away a little. Hearts come back at every checkpoint.');
   }
 
   /** Bank coins and distance (at checkpoints and whenever a run ends). */
@@ -877,7 +889,7 @@ export class Game {
     const m = this.mission;
     this.capture = new Capture(m, {
       phase: (ph) => {
-        if (ph === 'lock') { this.criminal.weave = true; this.ui.banner(CAPTURE_TEXT[m.capture.type].tool + ' READY', CAPTURE_TEXT[m.capture.type].ready, 2600); this.audio.abilityReady(); }
+        if (ph === 'lock') { this.tip('lock', this.touch ? 'To catch him: 1) move into his lane, 2) tap FIRE when the white line is on GREEN.' : 'To catch him: 1) move into his lane, 2) press E when the white line is on GREEN.'); this.criminal.weave = true; this.ui.banner(CAPTURE_TEXT[m.capture.type].tool + ' READY', CAPTURE_TEXT[m.capture.type].ready, 2600); this.audio.abilityReady(); }
         else if (ph === 'approach') { this.criminal.weave = false; this.ui.banner('OUT OF RANGE', 'Close the distance again!', 1600); }
         else if (ph === 'takedown') this.beginTakedown();
         else if (ph === 'failed') this.fail('capture');
@@ -893,6 +905,7 @@ export class Game {
     this.ui.banner(early ? 'SUSPECT EXHAUSTED' : 'FINAL PURSUIT', `Get within ${m.capture.range} m of ${CRIMINALS[m.criminal].alias}`, 2600);
     if (this.abilities.active) { this.abilities.cancel(); this.endAbility(); }
     this.throwT = 2.5;
+    this.tip('final', 'He is worn out! Run close to him and jump over what he throws.');
   }
 
   private onShot(r: 'hit' | 'miss-timing' | 'miss-lane') {
@@ -1029,13 +1042,16 @@ export class Game {
     const zi = zoneIndexAt(m, p.d);
     if (zi > this.zone) this.enterZone(zi);
     const zone = m.zones[this.zone];
+    this.runT += dt;
+    if (this.runT > 0.8) this.tip('move', this.touch ? 'Swipe LEFT or RIGHT to change lane. Swipe UP to jump and DOWN to slide.' : 'LEFT and RIGHT arrows change lane. UP jumps, DOWN slides.');
+    if (this.runT > 9 && !m.patrol) this.tip('gap', 'The number at the top is how far ahead the thief is. Do not crash and you will catch up.');
     this.pace = paceAt(p.d - this.startD, zone.maxSpeed);
     const speed = this.pace * p.speedFactor * (ab.active ? ab.def.speedMul : 1);
     if (this.autopilot) this.bot(speed);
     this.spawner.update(p.d, speed, dt, this.time);
     this.powers.update(dt);
     if (ab.update(dt)) this.endAbility();
-    if (ab.ready && !this.readyPinged && !this.capture) { this.readyPinged = true; this.audio.abilityReady(); this.ui.toast(`${ab.def.name} ready!`); }
+    if (ab.ready && !this.readyPinged && !this.capture) { this.readyPinged = true; this.audio.abilityReady(); this.ui.toast(`${ab.def.name} ready!`); this.tip('power', this.touch ? 'Your power is charged! Tap the glowing round button to use it.' : 'Your power is charged! Press E to use it.'); }
     p.update(dt, speed, true);
     this.world.update(p.d, this.time);
     this.bend.update(dt, p.d, -p.d, zone.curve, zone.hills);
@@ -1076,7 +1092,7 @@ export class Game {
       // wear the suspect down: staying on their heels can force the arrest before the end of the route
       const early = m.pursuit.early;
       if (early && !this.capture && p.d >= early.from) {
-        if (!this.tiringTold) { this.tiringTold = true; this.ui.radio('The suspect is tiring. Stay right on their heels and they will run out of breath!'); this.audio.radio(); }
+        if (!this.tiringTold) { this.tiringTold = true; this.ui.radio('The suspect is tiring. Stay right on their heels and they will run out of breath!'); this.audio.radio(); this.tip('stamina', 'The thief is getting tired! Stay right behind him to empty the red bar at the top. When it is empty you can catch him.'); }
         this.pursuit.tire(dt, p.speedFactor, !c.riding);
       }
       if (!this.capture && (p.d >= m.length || this.pursuit.exhausted)) this.startCapture(p.d < m.length);
@@ -1097,7 +1113,7 @@ export class Game {
       this.ui.hud({
         distance: this.distance, score: this.score, coins: this.runCoins, gap: this.pursuit.gap, closeness: this.pursuit.closeness, danger: this.pursuit.danger,
         hearts: this.pursuit.hearts, zone: zone.name,
-        stamina: !m.patrol && !!m.pursuit.early && !this.capture && p.d >= m.pursuit.early.from ? this.pursuit.stamina : -1, onHeels: this.pursuit.onHeels && !this.criminal.riding,
+        stamina: !m.patrol && !!m.pursuit.early && !this.capture && p.d >= m.pursuit.early.from ? this.pursuit.stamina : -1, onHeels: this.pursuit.onHeels,
         ability: { fill: ab.fill, ready: ab.ready, active: ab.active, cooling: ab.cooldown > 0 && !ab.active, charge: Math.floor(ab.charge), cost: ab.cost, left: ab.left },
       });
       const cap = this.capture;

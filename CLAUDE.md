@@ -57,9 +57,14 @@ tools/          build-assets, e2e, update-test, shots, viewer.html
   suspect pull away by the real speed difference; abilities close it faster.
 - **Early capture (suspect stamina).** The owner found 50,000 m too long but chose to keep the route
   length. From `pursuit.early.from`, staying within 4 m of the zone floor at full pace drains stamina
-  over `pursuit.early.hold` seconds; a crash gives 12% back; no drain while the suspect rides a
-  motorcycle. Empty stamina starts the capture immediately. So route length is an upper bound: a
-  clean case 1 ends near 10,300 m (about 7 min) instead of 50,000 m (about 28 min).
+  over `pursuit.early.hold` seconds; a crash gives 12% back; a suspect on a motorcycle tires at half
+  rate. Empty stamina starts the capture immediately. So route length is an upper bound. The owner
+  then found the catch still too slow, so `from`/`hold` were cut (case 1: 1,500 m and 75 s): a clean
+  case 1 now ends near 3,600 m (about 2.7 min), case 2 near 5,300 m, the boss near 8,900 m.
+- **Coaching, because "not clear what to do".** `Game.tip(id, text)` shows a one-sentence card the
+  first time each thing happens (ids: move, gap, hit, power, stamina, final, lock), tracked in
+  `save.data.tips`. The `?` button on the home screen opens the `help` sheet. Use plain words in
+  player-facing text ("thief", "the red bar"), not system terms.
 - **Capture is never automatic.** Close to range, be in the suspect's lane, press the action button
   inside the timing window. Types: taser, net, tackle (per case).
 - **Ability charge is separate from the wallet.** Each coin adds to both; activating empties the
@@ -104,7 +109,9 @@ tools/          build-assets, e2e, update-test, shots, viewer.html
 ## PWA and versions
 - Each build is stamped with `package.json` version + git commit (`VERCEL_GIT_COMMIT_SHA` on Vercel) +
   build time, exposed as `__APP_VERSION__`, `__APP_COMMIT__`, `__APP_BUILT__` and written to
-  `dist/version.json`. The menu shows `v0.2.0 (abc1234)`; Settings has a Version row with CHECK.
+  `dist/version.json`. The home screen shows it top-right under the coins (`v0.2.0 (abc1234) · latest`); it was moved
+  there because the owner could not find it at the bottom of the footer. Settings has a Version
+  row with CHECK.
 - `version.json` is never cached or precached. `src/core/Updates.ts` compares it with the running
   build on launch, on return to foreground and on CHECK.
 - **A new service worker waits.** It does not `skipWaiting` on install; the page posts `SKIP_WAITING`

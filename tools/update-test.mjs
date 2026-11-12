@@ -33,7 +33,8 @@ check(s.label.includes(a.version) && (!a.commit || s.label.includes(a.commit)), 
 await page.evaluate(() => __game.updates.check());
 s = await info();
 check(s.status === 'latest' && !s.button, 'with nothing newer published it reports "latest" and offers no update');
-const builtA = await page.evaluate(() => __game.updates.constructor && document.getElementById('m-version').textContent);
+check(s.label.endsWith('latest'), 'the home screen says it is the latest version');
+const builtA = await page.evaluate(() => __APP_BUILT_CHECK());
 
 console.log('publishing a newer build…');
 await wait(1100);
@@ -45,7 +46,8 @@ await page.evaluate(() => __game.updates.check());
 await page.waitForFunction(() => __game.updates.status === 'available', { timeout: 30000 });
 s = await info();
 check(s.button, 'the menu shows the update button');
-check(s.label === builtA, 'the app keeps running the old build until the player accepts');
+check(s.label.endsWith('update ready'), 'the home screen version label says an update is ready');
+check(await page.evaluate((built) => __APP_BUILT_CHECK() === built, builtA), 'the app keeps running the old build until the player accepts');
 check(await page.evaluate((built) => __game.updates.latest?.built === built, b.built), 'it knows which build is waiting');
 await page.evaluate(() => __game.openSheet('settings'));
 await wait(600);

@@ -12,7 +12,7 @@ const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const pct = (f: number) => `${Math.round(Math.min(1, Math.max(0, f)) * 100)}%`;
 
 export type Screen = 'splash' | 'menu' | 'hud' | 'pause' | 'over' | 'cine';
-export type SheetName = 'heroes' | 'missions' | 'bounties' | 'shop' | 'seasons' | 'settings';
+export type SheetName = 'heroes' | 'missions' | 'bounties' | 'shop' | 'seasons' | 'settings' | 'help';
 export interface BountyRow { id: string; text: string; progress: number; target: number; reward: number; done: boolean }
 export interface MenuModel {
   coins: number; level: number; xpFrac: number; claimable: number; preview: string; canInstall: boolean;
@@ -47,7 +47,7 @@ export interface UiHandlers {
   setting(key: string, value: number | string | boolean): void;
   resetProgress(): void; install(): void; power(): void; skip(): void; restart(): void; checkUpdate(): void; applyUpdate(): void;
 }
-const TITLES: Record<SheetName, string> = { heroes: 'HEROES', missions: 'CASE FILES', bounties: 'BOUNTIES', shop: 'UPGRADES', seasons: 'SEASONS', settings: 'SETTINGS' };
+const TITLES: Record<SheetName, string> = { heroes: 'HEROES', missions: 'CASE FILES', bounties: 'BOUNTIES', shop: 'UPGRADES', seasons: 'SEASONS', settings: 'SETTINGS', help: 'HOW TO PLAY' };
 
 /** DOM overlay: menus, sheets, HUD, cinematic captions and results. Only touches the DOM when values change. */
 export class Ui {
@@ -55,6 +55,7 @@ export class Ui {
   private toastT = 0;
   private bannerT = 0;
   private radioT = 0;
+  private coachT = 0;
   private countT = 0;
   private powerEls = {} as Record<PowerKind, { root: HTMLElement; bar: HTMLElement }>;
   private setup: HudSetup | null = null;
@@ -140,7 +141,7 @@ export class Ui {
   show(s: Screen) {
     for (const id of ['splash', 'menu', 'hud', 'pause', 'over', 'cine']) $(id).classList.toggle('show', id === s || (id === 'hud' && s === 'pause'));
     if (s !== 'menu') { $('sheet').classList.remove('show'); $('menu').classList.remove('sheet-open'); }
-    if (s !== 'hud' && s !== 'pause') { $('banner').classList.remove('show'); $('radio').classList.remove('show'); this.capture(null); }
+    if (s !== 'hud' && s !== 'pause') { $('banner').classList.remove('show'); $('radio').classList.remove('show'); $('coach').classList.remove('show'); this.capture(null); }
   }
 
   loading(f: number) { ($('loadbar') as HTMLElement).style.width = `${Math.round(f * 100)}%`; }
@@ -163,6 +164,17 @@ export class Ui {
     b.classList.add('show');
     clearTimeout(this.bannerT);
     this.bannerT = window.setTimeout(() => b.classList.remove('show'), ms);
+  }
+
+  /** First-time coaching card: one plain instruction, shown for a few seconds while play continues. */
+  coach(text: string, ms = 6500) {
+    $('coach-text').textContent = text;
+    const c = $('coach');
+    c.classList.remove('show');
+    void c.offsetWidth;
+    c.classList.add('show');
+    clearTimeout(this.coachT);
+    this.coachT = window.setTimeout(() => c.classList.remove('show'), ms);
   }
 
   /** Radio call from dispatch (zone briefings). */
@@ -200,7 +212,10 @@ export class Ui {
     this.set('play-label', c.patrol ? 'START PATROL' : c.checkpoint ? 'RESUME PURSUIT' : 'START PURSUIT');
     this.cls('btn-restart', 'on', !!c.checkpoint);
     this.cls('btn-case', 'progress', !!c.checkpoint);
-    this.set('m-version', m.version.label);
+    const vs = m.version.status;
+    this.set('m-version', m.version.label + (vs === 'latest' ? ' · latest' : vs === 'available' || vs === 'updating' ? ' · update ready' : vs === 'offline' ? ' · offline' : ''));
+    this.cls('m-version', 'ok', vs === 'latest');
+    this.cls('m-version', 'new', vs === 'available' || vs === 'updating');
     this.cls('btn-update', 'on', m.version.status === 'available' || m.version.status === 'updating');
     this.set('update-label', m.version.status === 'updating' ? 'UPDATING…' : 'UPDATE AVAILABLE — TAP TO INSTALL');
     $('sheet').classList.toggle('show', !!sheet);
@@ -211,7 +226,7 @@ export class Ui {
     const scroll = body.querySelector('.chars')?.scrollLeft ?? 0;
     const top = body.dataset.sheet === sheet ? body.scrollTop : 0;
     body.dataset.sheet = sheet;
-    body.innerHTML = sheet === 'heroes' ? this.heroes(m) : sheet === 'missions' ? this.cases(m) : sheet === 'bounties' ? this.bounties(m) : sheet === 'shop' ? this.shop(m) : sheet === 'seasons' ? this.seasons(m) : this.settings(m);
+    body.innerHTML = sheet === 'heroes' ? this.heroes(m) : sheet === 'missions' ? this.cases(m) : sheet === 'bounties' ? this.bounties(m) : sheet === 'shop' ? this.shop(m) : sheet === 'seasons' ? this.seasons(m) : sheet === 'help' ? this.help() : this.settings(m);
     const row = body.querySelector('.chars');
     if (row) row.scrollLeft = scroll;
     body.scrollTop = top;
@@ -283,6 +298,16 @@ export class Ui {
       <div class="set">Reset progress<button class="btn small red" data-act="reset">RESET</button></div>`;
   }
 
+  private help() {
+    const touch = matchMedia('(pointer: coarse)').matches;
+    const step = (n: number, ico: string, bg: string, title: string, text: string) => `<div class="card"><div class="ico" style="background:${bg}">${icon(ico)}</div><div class="txt"><em>STEP ${n}</em><h3>${title}</h3><p>${text}</p></div></div>`;
+    return `<p class="hint">Your job: chase the thief and arrest him.</p>`
+      + step(1, 'runner', '#2a9dff', 'Chase without crashing', touch ? 'Swipe left or right to change lane, up to jump, down to slide. Every crash costs a heart and lets the thief get away.' : 'Arrow keys change lane, jump and slide. Every crash costs a heart and lets the thief get away.')
+      + step(2, 'heart', '#ff5a5f', 'Tire him out', 'After a short chase a red bar appears at the top. Stay right behind the thief and the bar empties. Crash and it fills back a little.')
+      + step(3, 'zap', '#1fc48e', 'Make the arrest', `When the bar is empty, run close. Move into his lane and ${touch ? 'tap FIRE' : 'press E'} when the white line is on the green part. Two hits and he is caught.`)
+      + `<div class="card"><div class="ico" style="background:#b56bff">${icon('bolt')}</div><div class="txt"><em>BONUS</em><h3>Use your power</h3><p>Coins fill the round button. When it glows, ${touch ? 'tap it' : 'press E'}: the officer rides a police motorcycle and closes in fast.</p></div></div>`;
+  }
+
   private versionRow(m: MenuModel) {
     const v = m.version;
     const note = v.status === 'available' ? `New version ready${v.latest ? `: ${v.latest}` : ''}` : v.status === 'updating' ? 'Installing the new version…' : v.status === 'latest' ? 'You are on the latest version' : v.status === 'checking' ? 'Checking…' : v.status === 'offline' ? 'Could not check — you are offline' : v.built ? `Built ${v.built}` : '';
@@ -328,7 +353,7 @@ export class Ui {
       this.style('h-crim', 'left', pct(1 - h.closeness));
       this.cls('h-chase', 'danger', h.danger);
       this.cls('h-stamina', 'show', h.stamina >= 0);
-      if (h.stamina >= 0) { this.style('h-stam', 'width', pct(h.stamina)); this.cls('h-stamina', 'draining', h.onHeels); }
+      if (h.stamina >= 0) { this.style('h-stam', 'width', pct(h.stamina)); this.cls('h-stamina', 'draining', h.onHeels); this.set('h-stam-label', h.onHeels ? 'THIEF IS TIRING — KEEP CLOSE!' : 'GET CLOSER TO TIRE THE THIEF'); }
       this.style('h-prog', 'width', pct(h.distance / s.length));
     }
     // ability button: ring = charge, or time left while active

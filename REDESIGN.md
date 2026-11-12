@@ -29,7 +29,9 @@
 - Checkpoints at every zone; hearts instead of one-hit death.
 - Early capture: staying on the suspect's heels drains their stamina and opens the finale before the
   end of the route. 50,000 m is the longest case 1 can last, not how long it must last: an
-  unhit autopilot run makes the arrest at about 10,300 m (6.8 minutes).
+  unhit autopilot run makes the arrest at about 3,600 m (2.7 minutes); case 2 about 5,300 m
+  (3.3 minutes); the boss about 8,900 m (5.3 minutes).
+- First-time coaching cards and a "How to play" sheet explain the chase, the stamina bar and the capture.
 - Playable finale (taser, net launcher or tackle depending on the case) and an arrest cinematic.
 - Intro cinematic per case: robbery, suspect bolts, dispatch call, go.
 
@@ -69,6 +71,6 @@
   fixed in `src/data/seasons.ts`; there is no server, so new content ships with a new build.
 - **No costumes, equipment shop or character upgrades** beyond the four shop upgrades and hero unlocks.
 - **Not yet run on a physical phone.** Frame rate on mid-range Android and touch feel are unverified.
-- **Balance is a first pass.** Case 1 runs from about 7 minutes (clean play, early capture) up to about
+- **Balance is a first pass.** Case 1 runs from under 3 minutes (clean play, early capture) up to about
   28 minutes (the full 50,000 m); gap, heart, stamina and economy numbers have only been tuned against
   the autopilot. Players who capture early do not see the later environments of that case.

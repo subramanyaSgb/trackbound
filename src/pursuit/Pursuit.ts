@@ -50,12 +50,13 @@ export class Pursuit {
 
   /**
    * Wear the suspect down: call each frame once the mission's early-capture distance is passed.
-   * Stamina only drains while the officer is at full pace and right behind a suspect who is on foot.
+   * Stamina only drains while the officer is at full pace and right behind the suspect; a suspect
+   * on a vehicle tires at half the rate.
    */
   tire(dt: number, speedFrac: number, onFoot: boolean) {
     const hold = this.mission.pursuit.early?.hold;
-    if (!hold || this.failed || !onFoot || speedFrac < 0.95 || !this.onHeels) return;
-    this.stamina = Math.max(0, this.stamina - dt / hold);
+    if (!hold || this.failed || speedFrac < 0.95 || !this.onHeels) return;
+    this.stamina = Math.max(0, this.stamina - (dt / hold) * (onFoot ? 1 : 0.5));
   }
 
   /**

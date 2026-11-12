@@ -64,7 +64,7 @@ export class Updates {
       void this.reg?.update().catch(() => {}); // start downloading it
       this.set('available');
     } else if (this.reg?.waiting && navigator.serviceWorker.controller) this.set('available');
-    else if (!quiet || this.status === 'checking') this.set('latest');
+    else this.set('latest');
   }
 
   /** Switch to the downloaded build and reload. */

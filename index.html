@@ -57,7 +57,10 @@
   <div id="menu" class="screen">
     <header class="topbar">
       <div class="profile"><div class="lvl"><svg><use href="#i-star"/></svg><b id="m-level">1</b></div><div class="xp"><i id="m-xp"></i><span>RANK <em id="m-level2">1</em></span></div></div>
-      <div class="chip"><svg><use href="#i-coin"/></svg><b id="m-coins">0</b></div>
+      <div class="topright">
+        <div class="toprow"><button class="round help" data-sheet="help" aria-label="How to play">?</button><div class="chip"><svg><use href="#i-coin"/></svg><b id="m-coins">0</b></div></div>
+        <span class="version" id="m-version"></span>
+      </div>
     </header>
     <div class="logo sm"><span>TRACK</span><span class="b">BOUND</span><em class="tag">PURSUIT</em></div>
     <footer>
@@ -79,7 +82,6 @@
       </nav>
       <p class="hint" id="hint"></p>
       <button id="btn-update" class="btn small mint update"><svg><use href="#i-retry"/></svg><span id="update-label">UPDATE AVAILABLE</span></button>
-      <p class="version" id="m-version"></p>
     </footer>
   </div>
 
@@ -96,7 +98,7 @@
     <div class="chase" id="h-chase">
       <div class="gapbar"><svg class="cop"><use href="#i-badge"/></svg><div class="track"><i id="h-close"></i><svg id="h-crim" class="crim"><use href="#i-mask"/></svg></div></div>
       <div class="gaptxt"><b id="h-gap">0</b><em>m behind</em> <span id="h-suspect"></span></div>
-      <div class="stamina" id="h-stamina"><span>SUSPECT STAMINA</span><div><i id="h-stam"></i></div></div>
+      <div class="stamina" id="h-stamina"><span id="h-stam-label">GET CLOSER TO TIRE THE THIEF</span><div><i id="h-stam"></i></div></div>
     </div>
     <div class="right">
       <div class="chip" id="h-coinchip"><svg><use href="#i-coin"/></svg><b id="h-coins">0</b></div>
@@ -104,6 +106,7 @@
     </div>
     <div class="route"><div class="line"><i id="h-prog"></i><div id="h-ticks"></div></div><span id="h-zone"></span></div>
     <div id="powers" class="powers"></div>
+    <div id="coach" class="coach"><svg><use href="#i-badge"/></svg><p id="coach-text"></p></div>
     <div id="radio" class="radio"><svg><use href="#i-badge"/></svg><p><b>DISPATCH</b><span id="radio-text"></span></p></div>
     <div id="capture" class="capture">
       <b id="cap-title"></b>

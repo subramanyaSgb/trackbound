@@ -21,6 +21,8 @@ export interface SaveData {
   seasonXp: Record<string, number>;
   seasonClaimed: Record<string, number>;
   introSeen: boolean;
+  /** Coaching tips already shown (id -> times). */
+  tips: Record<string, number>;
 }
 const defaults = (): SaveData => ({
   version: 2,
@@ -30,7 +32,7 @@ const defaults = (): SaveData => ({
   upgrades: { magnet: 0, shield: 0, double: 0, charge: 0 },
   missions: [], missionCursor: 0, missionsDone: 0,
   mission: 'm1', story: {}, totalDistance: 0, arrests: 0,
-  seasonXp: {}, seasonClaimed: {}, introSeen: false,
+  seasonXp: {}, seasonClaimed: {}, introSeen: false, tips: {},
 });
 
 /** XP curve: level n -> n+1 costs 800 * n. */
@@ -68,7 +70,7 @@ export class Save {
   /** Bring any older save up to the current shape. */
   static migrate(stored: Partial<SaveData> | undefined): SaveData {
     const d = defaults();
-    const data: SaveData = { ...d, ...stored, upgrades: { ...d.upgrades, ...stored?.upgrades }, story: { ...stored?.story }, seasonXp: { ...stored?.seasonXp }, seasonClaimed: { ...stored?.seasonClaimed } };
+    const data: SaveData = { ...d, ...stored, upgrades: { ...d.upgrades, ...stored?.upgrades }, story: { ...stored?.story }, seasonXp: { ...stored?.seasonXp }, seasonClaimed: { ...stored?.seasonClaimed }, tips: { ...stored?.tips } };
     if ((stored?.version ?? 1) < 2) {
       // v1 was the endless runner: its five runners no longer exist; coins, XP and upgrades carry over
       data.owned = ['officer'];
